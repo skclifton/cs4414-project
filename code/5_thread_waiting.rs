@@ -19,7 +19,7 @@ fn mytask(s: &str) {
 fn main() {
     
     for i in range(0, 100) {
-        let result: Result<~str, ~std::any::Any:Send> = do task::try { 
+        let result: Result<~str, ~std::any::Any:Send> = task::try { 
             mytask(i.to_str()); 
             ~"Done" };
         assert!(result.is_ok());

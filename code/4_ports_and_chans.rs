@@ -1,4 +1,3 @@
-extern mod extra;
 use std::task;
 use std::comm::Chan;
 
