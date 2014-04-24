@@ -1,14 +1,14 @@
 use std::task;
-use std::comm::Chan;
+use std::comm::channel;
 
 fn main() {
     let mut count: int = 0;
-    let (port, chan)  = SharedChan::new();
+    let (tx, rx)  = channel();
     
     for _ in range(0, 10000) {
-        let child_chan = chan.clone();
-        let (porto, chano) = Chan::new();
-        child_chan.send(2);
+        let child_tx = tx.clone();
+        let (chano, porto) = channel();
+        child_tx.send(2);
         let var = count;
         
         task::spawn( proc(){ 
