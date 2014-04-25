@@ -2,7 +2,7 @@ extern crate sync;
 
 use sync::{RWLock, Arc};
 
-fn mytask( mut count: int) -> int{
+fn increment( count: int) -> int{
     return count + 1;    
 }
 
@@ -18,12 +18,14 @@ fn main() {
         
             let mut count = lock2.write();
             
-            println!("before -  counter = {}", *count);
+            println!("before -  count = {}", *count);
             for _ in range (0, 100) {
-                *count = mytask(*count);
+                *count = increment(*count);
             }
-            println!("after -  counter = {}", *count);
+            
             let count = count.downgrade();
+            
+            println!("after -  count = {}", *count);
         });
     }
     
