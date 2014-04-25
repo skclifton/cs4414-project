@@ -8,7 +8,7 @@ static mut counter : uint = 0;
 
 fn mytask(s: &str) {
     println!("before {:s}", s);
-    for _ in range(0, 10000) {
+    for _ in range(0, 100) {
         unsafe {
             counter += 1;
         }
@@ -18,10 +18,10 @@ fn mytask(s: &str) {
 
 fn main() {
     
-    for i in range(0, 100) {
-        let result: Result<~str, ~std::any::Any:Send> = task::try { 
+    for i in range(0, 10000) {
+        let result: Result<~str, ~std::any::Any:Send> = task::try(proc() { 
             mytask(i.to_str()); 
-            ~"Done" };
+            ~"Done" });
         assert!(result.is_ok());
     }
 
