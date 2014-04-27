@@ -28,37 +28,200 @@
     <div id="content-wrapper">
       <div class="inner clearfix">
         <section id="main-content">
-          <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
-
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
-
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
-
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+          <h1>
+<a name="concurrency-and-threads-in-rust-010" class="anchor" href="#concurrency-and-threads-in-rust-010"><span class="octicon octicon-link"></span></a>Concurrency and Threads in Rust 0.10</h1>
 
 <h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<a name="example-1-thread-creation" class="anchor" href="#example-1-thread-creation"><span class="octicon octicon-link"></span></a>Example 1: Thread Creation</h3>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">task</span><span class="p">;</span>
+
+<span class="k">fn</span> <span class="n">printStr</span><span class="p">(</span><span class="n">s</span><span class="o">:</span> <span class="o">&amp;</span><span class="k">str</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span> <span class="s">"{:s}"</span><span class="p">,</span> <span class="n">s</span> <span class="p">);</span>
+<span class="p">}</span>   
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">task</span><span class="o">::</span><span class="n">spawn</span><span class="p">(</span> <span class="n">proc</span><span class="p">(){</span> <span class="n">printStr</span><span class="p">(</span><span class="s">"A"</span><span class="p">);</span> <span class="p">});</span>
+    <span class="n">task</span><span class="o">::</span><span class="n">spawn</span><span class="p">(</span> <span class="n">proc</span><span class="p">(){</span> <span class="n">printStr</span><span class="p">(</span><span class="s">"B"</span><span class="p">);</span> <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
 
 <h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<a name="example-2-failed-data-sharing" class="anchor" href="#example-2-failed-data-sharing"><span class="octicon octicon-link"></span></a>Example 2: Failed Data Sharing</h3>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">task</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="k">mut</span> <span class="n">count</span><span class="o">:</span> <span class="k">int</span> <span class="o">=</span> <span class="m">0</span><span class="p">;</span>
+
+
+<span class="k">fn</span> <span class="n">increment</span><span class="p">(</span> <span class="n">count</span><span class="o">:</span> <span class="k">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">int</span><span class="p">{</span>
+    <span class="k">return</span> <span class="n">count</span> <span class="o">+</span> <span class="m">1</span><span class="p">;</span>    
+<span class="p">}</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10000</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">task</span><span class="o">::</span><span class="n">spawn</span><span class="p">(</span> <span class="n">proc</span><span class="p">(){</span> 
+            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"before {:s}"</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">to_str</span><span class="p">());</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">100</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">unsafe</span> <span class="p">{</span>
+                    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"before - count is: {}"</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+                    <span class="n">count</span> <span class="o">=</span> <span class="n">increment</span><span class="p">(</span><span class="n">count</span><span class="p">);</span>
+                    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"after - count is: {}"</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"after {:s}"</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">to_str</span><span class="p">());</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Result should be 1000000"</span><span class="p">);</span>
+    <span class="k">unsafe</span> <span class="p">{</span>
+        <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"main: done with both count = {}"</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
 
 <h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<a name="example-3-safe-data-sharing" class="anchor" href="#example-3-safe-data-sharing"><span class="octicon octicon-link"></span></a>Example 3: Safe Data Sharing</h3>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<div class="highlight highlight-rust"><pre><span class="k">extern</span> <span class="n">crate</span> <span class="n">sync</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="n">sync</span><span class="o">::</span><span class="p">{</span><span class="n">RWLock</span><span class="p">,</span> <span class="n">Arc</span><span class="p">};</span>
+
+<span class="k">fn</span> <span class="n">increment</span><span class="p">(</span> <span class="n">count</span><span class="o">:</span> <span class="k">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">int</span><span class="p">{</span>
+    <span class="k">return</span> <span class="n">count</span> <span class="o">+</span> <span class="m">1</span><span class="p">;</span>    
+<span class="p">}</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>    
+
+    <span class="k">let</span> <span class="n">lock1</span> <span class="o">=</span> <span class="n">Arc</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">RWLock</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="m">0</span><span class="p">));</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10000</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="k">let</span> <span class="n">lock2</span> <span class="o">=</span> <span class="n">lock1</span><span class="p">.</span><span class="n">clone</span><span class="p">();</span>
+
+        <span class="n">spawn</span><span class="p">(</span><span class="n">proc</span><span class="p">()</span> <span class="p">{</span>
+
+            <span class="k">let</span> <span class="k">mut</span> <span class="n">count</span> <span class="o">=</span> <span class="n">lock2</span><span class="p">.</span><span class="n">write</span><span class="p">();</span>
+
+            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"before -  count = {}"</span><span class="p">,</span> <span class="o">*</span><span class="n">count</span><span class="p">);</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span> <span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">100</span><span class="p">)</span> <span class="p">{</span>
+                <span class="o">*</span><span class="n">count</span> <span class="o">=</span> <span class="n">increment</span><span class="p">(</span><span class="o">*</span><span class="n">count</span><span class="p">);</span>
+            <span class="p">}</span>
+
+            <span class="k">let</span> <span class="n">count</span> <span class="o">=</span> <span class="n">count</span><span class="p">.</span><span class="n">downgrade</span><span class="p">();</span>
+
+            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"after -  count = {}"</span><span class="p">,</span> <span class="o">*</span><span class="n">count</span><span class="p">);</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Result should be 1000000"</span><span class="p">);</span>
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Counter is: {}"</span><span class="p">,</span> <span class="o">*</span><span class="n">lock1</span><span class="p">.</span><span class="n">read</span><span class="p">());</span>
+<span class="p">}</span>
+</pre></div>
 
 <h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+<a name="example-4-ports-and-channels" class="anchor" href="#example-4-ports-and-channels"><span class="octicon octicon-link"></span></a>Example 4: Ports and Channels</h3>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">task</span><span class="p">;</span>
+<span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">comm</span><span class="o">::</span><span class="n">channel</span><span class="p">;</span>
+
+<span class="k">fn</span> <span class="n">increment</span><span class="p">(</span> <span class="n">count</span><span class="o">:</span> <span class="k">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">int</span><span class="p">{</span>
+    <span class="k">return</span> <span class="n">count</span> <span class="o">+</span> <span class="m">1</span><span class="p">;</span>    
+<span class="p">}</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">count</span><span class="o">:</span> <span class="k">int</span> <span class="o">=</span> <span class="m">0</span><span class="p">;</span>
+    <span class="k">let</span> <span class="p">(</span><span class="n">tx</span><span class="p">,</span> <span class="n">rx</span><span class="p">)</span>  <span class="o">=</span> <span class="n">channel</span><span class="p">();</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10000</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="n">child_tx</span> <span class="o">=</span> <span class="n">tx</span><span class="p">.</span><span class="n">clone</span><span class="p">();</span>
+        <span class="k">let</span> <span class="p">(</span><span class="n">chano</span><span class="p">,</span> <span class="n">porto</span><span class="p">)</span> <span class="o">=</span> <span class="n">channel</span><span class="p">();</span>
+        <span class="n">child_tx</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="m">2</span><span class="p">);</span>
+        <span class="k">let</span> <span class="n">count2</span> <span class="o">=</span> <span class="n">count</span><span class="p">;</span>
+
+        <span class="n">task</span><span class="o">::</span><span class="n">spawn</span><span class="p">(</span> <span class="n">proc</span><span class="p">(){</span> 
+            <span class="k">let</span> <span class="k">mut</span> <span class="n">mut_count</span> <span class="o">=</span> <span class="n">count2</span><span class="p">;</span>
+            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"mutable count before: {}"</span><span class="p">,</span> <span class="n">mut_count</span><span class="p">);</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span> <span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">100</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">mut_count</span> <span class="o">=</span> <span class="n">increment</span><span class="p">(</span><span class="n">mut_count</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"mutable count after: {}"</span><span class="p">,</span> <span class="n">mut_count</span><span class="p">);</span>
+            <span class="n">chano</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">mut_count</span><span class="p">);</span>
+        <span class="p">});</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">porto</span><span class="p">.</span><span class="n">recv</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Result should be 1000000"</span><span class="p">);</span>
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"main: done with both count = {}"</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<h3>
+<a name="example-5-thread-waiting" class="anchor" href="#example-5-thread-waiting"><span class="octicon octicon-link"></span></a>Example 5: Thread Waiting</h3>
+
+<div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">task</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="k">mut</span> <span class="n">counter</span> <span class="o">:</span> <span class="k">uint</span> <span class="o">=</span> <span class="m">0</span><span class="p">;</span>
+
+<span class="k">fn</span> <span class="n">mytask</span><span class="p">(</span><span class="n">s</span><span class="o">:</span> <span class="o">&amp;</span><span class="k">str</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"before {:s}"</span><span class="p">,</span> <span class="n">s</span><span class="p">);</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">100</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">unsafe</span> <span class="p">{</span>
+            <span class="n">counter</span> <span class="o">+=</span> <span class="m">1</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"after {:s}"</span><span class="p">,</span> <span class="n">s</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10000</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="n">result</span><span class="o">:</span> <span class="n">Result</span><span class="o">&lt;~</span><span class="k">str</span><span class="p">,</span> <span class="o">~</span><span class="n">std</span><span class="o">::</span><span class="n">any</span><span class="o">::</span><span class="n">Any</span><span class="o">:</span><span class="n">Send</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">task</span><span class="o">::</span><span class="n">try</span><span class="p">(</span><span class="n">proc</span><span class="p">()</span> <span class="p">{</span> 
+            <span class="n">mytask</span><span class="p">(</span><span class="n">i</span><span class="p">.</span><span class="n">to_str</span><span class="p">());</span> 
+            <span class="o">~</span><span class="s">"Done"</span> <span class="p">});</span>
+        <span class="k">assert</span><span class="o">!</span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">is_ok</span><span class="p">());</span>
+    <span class="p">}</span>
+
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Result should be 1000000"</span><span class="p">);</span>
+    <span class="k">unsafe</span> <span class="p">{</span>
+        <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"main: done with both counter = {:u}"</span><span class="p">,</span> <span class="n">counter</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<h3>
+<a name="example-6-deadlock" class="anchor" href="#example-6-deadlock"><span class="octicon octicon-link"></span></a>Example 6: Deadlock</h3>
+
+<div class="highlight highlight-rust"><pre><span class="k">extern</span> <span class="n">crate</span> <span class="n">sync</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="n">sync</span><span class="o">::</span><span class="p">{</span><span class="n">Mutex</span><span class="p">,</span> <span class="n">Arc</span><span class="p">};</span>
+
+<span class="k">fn</span> <span class="n">increment</span><span class="p">(</span> <span class="n">count</span><span class="o">:</span> <span class="k">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">int</span><span class="p">{</span>
+    <span class="k">return</span> <span class="n">count</span> <span class="o">+</span> <span class="m">1</span><span class="p">;</span>    
+<span class="p">}</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>    
+
+    <span class="k">let</span> <span class="n">mutex1</span> <span class="o">=</span> <span class="n">Arc</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="n">Mutex</span><span class="o">::</span><span class="n">new</span><span class="p">(</span><span class="m">0</span><span class="p">));</span>
+    <span class="k">let</span> <span class="n">mutex2</span> <span class="o">=</span> <span class="n">mutex1</span><span class="p">.</span><span class="n">clone</span><span class="p">();</span>
+
+    <span class="n">spawn</span><span class="p">(</span><span class="n">proc</span><span class="p">()</span> <span class="p">{</span>
+
+        <span class="k">let</span> <span class="k">mut</span> <span class="n">val</span> <span class="o">=</span> <span class="n">mutex2</span><span class="p">.</span><span class="n">lock</span><span class="p">();</span>
+        <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="n">increment</span><span class="p">(</span><span class="o">*</span><span class="n">val</span><span class="p">);</span>
+
+
+    <span class="p">});</span>
+
+    <span class="k">let</span> <span class="n">value</span> <span class="o">=</span> <span class="n">mutex1</span><span class="p">.</span><span class="n">lock</span><span class="p">();</span>
+    <span class="k">while</span> <span class="o">*</span><span class="n">value</span> <span class="o">!=</span> <span class="m">2</span> <span class="p">{</span>
+        <span class="n">value</span><span class="p">.</span><span class="n">cond</span><span class="p">.</span><span class="n">wait</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Lock was never released in spawned proc(), so I will never be reached!"</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
         </section>
 
         <aside id="sidebar">
