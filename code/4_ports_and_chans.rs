@@ -1,10 +1,6 @@
 use std::task;
 use std::comm::channel;
 
-fn increment( count: int) -> int{
-    return count + 1;    
-}
-
 fn main() {
     let mut count: int = 0;
     let (tx, rx)  = channel();
@@ -17,11 +13,10 @@ fn main() {
         
         task::spawn( proc(){ 
             let mut mut_count = count2;
-            println!("mutable count before: {}", mut_count);
-            for _ in range (0,100) {
-                mut_count = increment(mut_count);
+            
+	    for _ in range (0,100) {
+                mut_count += 1;
             }
-            println!("mutable count after: {}", mut_count);
             chano.send(mut_count);
         });
         count = porto.recv();

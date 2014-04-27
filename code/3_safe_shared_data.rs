@@ -2,10 +2,6 @@ extern crate sync;
 
 use sync::{RWLock, Arc};
 
-fn increment( count: int) -> int{
-    return count + 1;    
-}
-
 fn main() {    
 
     let lock1 = Arc::new(RWLock::new(0));
@@ -20,7 +16,7 @@ fn main() {
             
             println!("before -  count = {}", *count);
             for _ in range (0, 100) {
-                *count = increment(*count);
+                *count += 1;
             }
             
             let count = count.downgrade();
