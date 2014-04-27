@@ -1,35 +1,69 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-    <meta charset='utf-8'>
+    <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
-
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-
     <title>cs4414-project by skclifton</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
   </head>
-
   <body>
-    <header>
-      <div class="inner">
-        <h1>cs4414-project</h1>
-        <h2></h2>
-        <a href="https://github.com/skclifton/cs4414-project" class="button"><small>View project on</small>GitHub</a>
-      </div>
-    </header>
 
-    <div id="content-wrapper">
-      <div class="inner clearfix">
-        <section id="main-content">
-          <h1>
+      <header>
+        <h1>cs4414-project</h1>
+        <p></p>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/skclifton/cs4414-project" class="button fork"><strong>View On GitHub</strong></a>
+        <div class="downloads">
+          <span>Downloads:</span>
+          <ul>
+            <li><a href="https://github.com/skclifton/cs4414-project/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/skclifton/cs4414-project/tarball/master" class="button">TAR</a></li>
+          </ul>
+        </div>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+        <ul></ul>
+      </nav>
+      <section>
+        <h1>
 <a name="concurrency-and-threads-in-rust-010" class="anchor" href="#concurrency-and-threads-in-rust-010"><span class="octicon octicon-link"></span></a>Concurrency and Threads in Rust 0.10</h1>
+
+<h2>
+<a name="processes-and-threads---what-are-they" class="anchor" href="#processes-and-threads---what-are-they"><span class="octicon octicon-link"></span></a>Processes and Threads - What are they?</h2>
+
+<h3>
+<a name="cost-of-creation" class="anchor" href="#cost-of-creation"><span class="octicon octicon-link"></span></a>Cost of Creation</h3>
+
+<h3>
+<a name="shared-memory" class="anchor" href="#shared-memory"><span class="octicon octicon-link"></span></a>Shared Memory</h3>
+
+<h2>
+<a name="tasks-are-a-special-form-of-thread" class="anchor" href="#tasks-are-a-special-form-of-thread"><span class="octicon octicon-link"></span></a>Tasks are a special form of thread</h2>
+
+<h3>
+<a name="native-thread-vs-green-thread" class="anchor" href="#native-thread-vs-green-thread"><span class="octicon octicon-link"></span></a>Native Thread vs. Green Thread</h3>
+
+<p>The default native thread uses one-to-one scheduling to map tasks to operating system (OS) kernel provided threads. Stated simply, for every task created by the user, there is a separate OS thread in which the task is run. </p>
+
+<h3>
+<a name="shared-memory-space" class="anchor" href="#shared-memory-space"><span class="octicon octicon-link"></span></a>Shared Memory Space</h3>
+
+<h2>
+<a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h2>
 
 <h3>
 <a name="example-1-thread-creation" class="anchor" href="#example-1-thread-creation"><span class="octicon octicon-link"></span></a>Example 1: Thread Creation</h3>
@@ -46,8 +80,8 @@
 <span class="p">}</span>
 </pre></div>
 
-<h3>
-<a name="example-2-failed-data-sharing" class="anchor" href="#example-2-failed-data-sharing"><span class="octicon octicon-link"></span></a>Example 2: Failed Data Sharing</h3>
+<h4>
+<a name="example-2-failed-data-sharing" class="anchor" href="#example-2-failed-data-sharing"><span class="octicon octicon-link"></span></a>Example 2: Failed Data Sharing</h4>
 
 <div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">task</span><span class="p">;</span>
 
@@ -190,6 +224,11 @@
 <span class="p">}</span>
 </pre></div>
 
+<h2>
+<a name="try-it" class="anchor" href="#try-it"><span class="octicon octicon-link"></span></a>Try it!</h2>
+
+<p>Here we explain the deadlock code</p>
+
 <h3>
 <a name="example-6-deadlock" class="anchor" href="#example-6-deadlock"><span class="octicon octicon-link"></span></a>Example 6: Deadlock</h3>
 
@@ -222,25 +261,15 @@
     <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Lock was never released in spawned proc(), so I will never be reached!"</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
-        </section>
 
-        <aside id="sidebar">
-          <a href="https://github.com/skclifton/cs4414-project/zipball/master" class="button">
-            <small>Download</small>
-            .zip file
-          </a>
-          <a href="https://github.com/skclifton/cs4414-project/tarball/master" class="button">
-            <small>Download</small>
-            .tar.gz file
-          </a>
-
-          <p class="repo-owner"><a href="https://github.com/skclifton/cs4414-project"></a> is maintained by <a href="https://github.com/skclifton">skclifton</a>.</p>
-
-          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
-        </aside>
-      </div>
+<p>Use features of Rust to write your own program that deadlocks.</p>
+      </section>
+      <footer>
+        <p>Project maintained by <a href="https://github.com/skclifton">skclifton</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+      </footer>
     </div>
-
-  
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
   </body>
 </html>
