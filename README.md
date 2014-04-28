@@ -1,4 +1,4 @@
-# Concurrency and Threads in Rust 0.10
+# Concurrency and Tasks in Rust 0.10
 
 ## Processes vs. Threads
 Both threads and processes are abstractions the operating system provides. Through the process abstraction, we can provide each program with the illusion that it owns the machine it is running on. This means giving each program its own address space, stack, registers and program counter, in addition to CPU time. Switching from a running process to a waiting process then requires the processor to make a context switch. This context switch involves saving the current thread's state to a process control block and restoring the state of the sleeping process. When making the context switch from one process to another we also have to switch address spaces, which is a fairly expensive process.
@@ -21,7 +21,7 @@ When spawning a task you provide a closure to pass to the function. By only acce
 The default native thread uses one-to-one scheduling to map tasks to operating system (OS) kernel provided threads. Stated simply, for every task created by the user, there is a separate OS thread in which the task is run. 
 
 
-#### Example 1: Thread Creation
+#### Example 1: Task Creation
 ```rust
 use std::task;
 
