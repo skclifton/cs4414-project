@@ -17,8 +17,11 @@ Rust tasks are a special type of thread. While tasks share memory space, only im
 When spawning a task you provide a closure to pass to the function. By only accepting owned closures, Rust can limit data shared between tasks to immutable data, since the parent task owns the data and allows child tasks to reference it. As soon as a child task tries to modify that owned box, that child task would have to take ownership of the box, violating the closure. Beyond closures, any type that is of the ```Send``` kind can be passed between tasks. ```Send``` types can only contain owned types, and thus do not violate ownership rules, but do not need to be explicitly stated as closures.
 
 
-### Native Thread vs. Green Thread
-The default native thread uses one-to-one scheduling to map tasks to operating system (OS) kernel provided threads. Stated simply, for every task created by the user, there is a separate OS thread in which the task is run. 
+### Task Implementation
+Rust implements tasks in two ways, based on which crate you use.
+The default native scheduling crate allows you to create tasks that use one-to-one scheduling. This means each task is mapped to a single operating system (OS) kernel provided threads. Stated simply, for every task created by the user, there is a separate OS thread in which the task is run. 
+The green scheduling crate provides the ability to create green threads. Green threads are user space threads that map to kernel threads in an M:N manner. Green threads take a bit more effort to set up in Rust and while they can be faster to spawn, they have poorer I/O performance and slower context switches.
+This chapter focuses on the first.
 
 
 #### Example 1: Task Creation
