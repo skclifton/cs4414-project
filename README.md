@@ -107,11 +107,11 @@ fn main() {
 }
 ```
 
-In this example, an Arc is used to share data between tasks. An acronym for Atomically Reference Counted data, the Arc creates a pointer to share data between tasks. Since it is owned by the start task, and each task gets a unique cloned version, it is immutable and can be safely passed into owned closures. The Arc only provides a pointer to share a memory location between tasks, and doesn't guarantee any form of safe or controlled access though. To control access to the data here, we must use a RWLock or similar type. The RWLock allows multiple tasks to read data, an immutable action, from that portion of memory. When a task needs to mutate the RWLock data, it must request write privileges. When these are granted, all other tasks trying to access the data will block until the writing task is finished and has relinquished control.
+In this example, an Arc is used to share data between tasks. An acronym for Atomically Reference Counted data, the Arc creates a pointer to share data between tasks. Since it is owned by the start task, and each task gets a unique cloned version, it is immutable and can be safely passed into owned closures. The Arc only provides a pointer to share a memory location between tasks, and doesn't guarantee any form of safe or controlled access though. To control access to the data here, we must use a RWLock or similar type. The RWLock allows multiple tasks to conduct immutable actions, like reading data, with that portion of memory. When a task needs to mutate the RWLock data it must request write privileges. When these are granted, all other tasks trying to access the data will block until the writing task is finished and has relinquished control.
 
 Of course, sometimes we want to look at the underlying structures used for this. Example 4 shows how we can safely share data between tasks using senders and receivers.
 
-#### Example 4: Senders, Reciervers and a Channel
+#### Example 4: Senders, Receivers and a Channel
 
 ```rust
 use std::task;
@@ -141,42 +141,9 @@ fn main() {
 ```
 Similar to the previous example, we need a way to pass data from the parent task to the child tasks and then in between each child task. The most basic way Rust does this is through the creation of a ```channel()```, with a ```Sender``` type on one end and a ```Receiver``` type on the other end. In this example we pass data from the parent task to child tasks through an immutable variable, so ```Senders``` and ```Receivers``` are only needed to communicate from the child threads back to the parent thread. Within the ```for``` loop to spawn a new thread we declare a Sender, ```tx``` and a Receiver ```rx```, that allow the soon to be spawned child task to send data back to its parent.
 
-#### Example 5: Thread Waiting
-
-```rust
-use std::task;
-
-static mut counter : uint = 0;
-
-fn mytask(s: &str) {
-    println!("before {:s}", s);
-    for _ in range(0, 100) {
-        unsafe {
-            counter += 1;
-        }
-    }
-    println!("after {:s}", s);
-}
-
-fn main() {
-    
-    for i in range(0, 10000) {
-        let result: Result<~str, ~std::any::Any:Send> = task::try(proc() { 
-            mytask(i.to_str()); 
-            ~"Done" });
-        assert!(result.is_ok());
-    }
-
-    println!("Result should be 1000000");
-    unsafe {
-        println!("main: done with both counter = {:u}", counter);
-    }
-}
-```
-
 ## Try it!
 
-#### Example 6: Deadlock
+#### Example 5: Deadlock
 
 ```rust
 extern crate sync;
