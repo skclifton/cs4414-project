@@ -40,7 +40,7 @@
       </nav>
       <section>
         <h1>
-<a name="concurrency-and-threads-in-rust-010" class="anchor" href="#concurrency-and-threads-in-rust-010"><span class="octicon octicon-link"></span></a>Concurrency and Threads in Rust 0.10</h1>
+<a name="concurrency-and-tasks-in-rust-010" class="anchor" href="#concurrency-and-tasks-in-rust-010"><span class="octicon octicon-link"></span></a>Concurrency and Tasks in Rust 0.10</h1>
 
 <h2>
 <a name="processes-vs-threads" class="anchor" href="#processes-vs-threads"><span class="octicon octicon-link"></span></a>Processes vs. Threads</h2>
@@ -71,7 +71,7 @@ When spawning a task you provide a closure to pass to the function. By only acce
 <p>The default native thread uses one-to-one scheduling to map tasks to operating system (OS) kernel provided threads. Stated simply, for every task created by the user, there is a separate OS thread in which the task is run. </p>
 
 <h4>
-<a name="example-1-thread-creation" class="anchor" href="#example-1-thread-creation"><span class="octicon octicon-link"></span></a>Example 1: Thread Creation</h4>
+<a name="example-1-task-creation" class="anchor" href="#example-1-task-creation"><span class="octicon octicon-link"></span></a>Example 1: Task Creation</h4>
 
 <div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">task</span><span class="p">;</span>
 
@@ -159,12 +159,12 @@ When spawning a task you provide a closure to pass to the function. By only acce
 <span class="p">}</span>
 </pre></div>
 
-<p>In this example, an Arc is used to share data between tasks. An acronym for Atomically Reference Counted data, the Arc creates a pointer to share data between tasks. Since it is owned by the start task, and each task gets a unique cloned version, it is immutable and can be safely passed into owned closures. The Arc only provides a pointer to share a memory location between tasks, and doesn't guarantee any form of safe or controlled access though. To control access to the data here, we must use a RWLock or similar type. The RWLock allows multiple tasks to read data, an immutable action, from that portion of memory. When a task needs to mutate the RWLock data, it must request write privileges. When these are granted, all other tasks trying to access the data will block until the writing task is finished and has relinquished control.</p>
+<p>In this example, an Arc is used to share data between tasks. An acronym for Atomically Reference Counted data, the Arc creates a pointer to share data between tasks. Since it is owned by the start task, and each task gets a unique cloned version, it is immutable and can be safely passed into owned closures. The Arc only provides a pointer to share a memory location between tasks, and doesn't guarantee any form of safe or controlled access though. To control access to the data here, we must use a RWLock or similar type. The RWLock allows multiple tasks to conduct immutable actions, like reading data, with that portion of memory. When a task needs to mutate the RWLock data it must request write privileges. When these are granted, all other tasks trying to access the data will block until the writing task is finished and has relinquished control.</p>
 
 <p>Of course, sometimes we want to look at the underlying structures used for this. Example 4 shows how we can safely share data between tasks using senders and receivers.</p>
 
 <h4>
-<a name="example-4-senders-reciervers-and-a-channel" class="anchor" href="#example-4-senders-reciervers-and-a-channel"><span class="octicon octicon-link"></span></a>Example 4: Senders, Reciervers and a Channel</h4>
+<a name="example-4-senders-receivers-and-a-channel" class="anchor" href="#example-4-senders-receivers-and-a-channel"><span class="octicon octicon-link"></span></a>Example 4: Senders, Receivers and a Channel</h4>
 
 <div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">task</span><span class="p">;</span>
 <span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">comm</span><span class="o">::</span><span class="n">channel</span><span class="p">;</span>
@@ -194,44 +194,11 @@ When spawning a task you provide a closure to pass to the function. By only acce
 
 <p>Similar to the previous example, we need a way to pass data from the parent task to the child tasks and then in between each child task. The most basic way Rust does this is through the creation of a <code>channel()</code>, with a <code>Sender</code> type on one end and a <code>Receiver</code> type on the other end. In this example we pass data from the parent task to child tasks through an immutable variable, so <code>Senders</code> and <code>Receivers</code> are only needed to communicate from the child threads back to the parent thread. Within the <code>for</code> loop to spawn a new thread we declare a Sender, <code>tx</code> and a Receiver <code>rx</code>, that allow the soon to be spawned child task to send data back to its parent.</p>
 
-<h4>
-<a name="example-5-thread-waiting" class="anchor" href="#example-5-thread-waiting"><span class="octicon octicon-link"></span></a>Example 5: Thread Waiting</h4>
-
-<div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">task</span><span class="p">;</span>
-
-<span class="k">static</span> <span class="k">mut</span> <span class="n">counter</span> <span class="o">:</span> <span class="k">uint</span> <span class="o">=</span> <span class="m">0</span><span class="p">;</span>
-
-<span class="k">fn</span> <span class="n">mytask</span><span class="p">(</span><span class="n">s</span><span class="o">:</span> <span class="o">&amp;</span><span class="k">str</span><span class="p">)</span> <span class="p">{</span>
-    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"before {:s}"</span><span class="p">,</span> <span class="n">s</span><span class="p">);</span>
-    <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">100</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">unsafe</span> <span class="p">{</span>
-            <span class="n">counter</span> <span class="o">+=</span> <span class="m">1</span><span class="p">;</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"after {:s}"</span><span class="p">,</span> <span class="n">s</span><span class="p">);</span>
-<span class="p">}</span>
-
-<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
-
-    <span class="k">for</span> <span class="n">i</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10000</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">let</span> <span class="n">result</span><span class="o">:</span> <span class="n">Result</span><span class="o">&lt;~</span><span class="k">str</span><span class="p">,</span> <span class="o">~</span><span class="n">std</span><span class="o">::</span><span class="n">any</span><span class="o">::</span><span class="n">Any</span><span class="o">:</span><span class="n">Send</span><span class="o">&gt;</span> <span class="o">=</span> <span class="n">task</span><span class="o">::</span><span class="n">try</span><span class="p">(</span><span class="n">proc</span><span class="p">()</span> <span class="p">{</span> 
-            <span class="n">mytask</span><span class="p">(</span><span class="n">i</span><span class="p">.</span><span class="n">to_str</span><span class="p">());</span> 
-            <span class="o">~</span><span class="s">"Done"</span> <span class="p">});</span>
-        <span class="k">assert</span><span class="o">!</span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">is_ok</span><span class="p">());</span>
-    <span class="p">}</span>
-
-    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Result should be 1000000"</span><span class="p">);</span>
-    <span class="k">unsafe</span> <span class="p">{</span>
-        <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"main: done with both counter = {:u}"</span><span class="p">,</span> <span class="n">counter</span><span class="p">);</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-
 <h2>
 <a name="try-it" class="anchor" href="#try-it"><span class="octicon octicon-link"></span></a>Try it!</h2>
 
 <h4>
-<a name="example-6-deadlock" class="anchor" href="#example-6-deadlock"><span class="octicon octicon-link"></span></a>Example 6: Deadlock</h4>
+<a name="example-5-deadlock" class="anchor" href="#example-5-deadlock"><span class="octicon octicon-link"></span></a>Example 5: Deadlock</h4>
 
 <div class="highlight highlight-rust"><pre><span class="k">extern</span> <span class="n">crate</span> <span class="n">sync</span><span class="p">;</span>
 
