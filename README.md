@@ -1,7 +1,8 @@
 # Concurrency and Threads in Rust 0.10
 
-## Processes and Threads - What are they?
+## Processes vs. Threads
 Both threads and processes are abstractions the operating system provides. Through the process abstraction, we can provide each program with the illusion that it owns the machine it is running on. This means giving each program its own address space, stack, registers and program counter, in addition to CPU time. Switching from a running process to a waiting process then requires the processor to make a context switch. This context switch involves saving the current thread's state to a process control block and restoring the state of the sleeping process. When making the context switch from one process to another we also have to switch address spaces, which is a fairly expensive process.
+
 A thread is a bit smaller than a process, and is often defined as the smallest possible unit of schedulable computation. Each thread retains the ability to execute a sequence of instructions by having separate program counters, registers and stack, threads share an address space. This means a context switch between threads does not require switching the address space, and can be done with lower cost.
 
 ### Cost of Creation
@@ -10,8 +11,9 @@ Since processes have their own address space, whenever a new process is created,
 ### Shared Memory
 Since threads share address space it is relatively easy for programmers to have them communicate. Processes are more difficult, and either require the use of special interfaces like pipes and message passing or very careful manual memory management.
 
-## Tasks are a special form of thread
-Rust tasks are a special form of thread. While tasks share memory space, only immutable memory can be shared.
+##Tasks in Rust
+
+Rust tasks are a special type of thread. While tasks share memory space, only immutable memory can be shared.
 When spawning a task you provide a closure to pass to the function. By only accepting owned closures, Rust can limit data shared between tasks to immutable data, since the parent task owns the data and allows child tasks to reference it. As soon as a child task tries to modify that owned box, that child task would have to take ownership of the box, violating the closure. Beyond closures, any type that is of the ```Send``` kind can be passed between tasks. ```Send``` types can only contain owned types, and thus do not violate ownership rules, but do not need to be explicitly stated as closures.
 
 
@@ -66,7 +68,7 @@ fn main() {
 }
 
 ```
-Here, 10,000 threads are created and each increments a global mutable variable 100 times. Even though the simple increment operation ```count += 1;``` seems like it should be atomic, we do not control the scheduling of each task, and any task can access count and perform this increment at anytime. This leads to incorrect results. Beyond incorrect results, the results are often different, making this a very difficult bug to identify and fix in a more complex program.
+Here, 10,000 threads are created and each increments a global mutable variable 100 times. Even though the simple increment operation ```count += 1;``` seems like it should be atomic is not guaranteed to be, and since we do not control the scheduling of each task any task can access count and perform this increment at anytime. This will often lead to incorrect results. Beyond incorrect results, the results are inconsistent, making this a very difficult bug to identify and fix in a more complex program.
 
 The solution to our problem is to safely share this data. Rust provides several higher-level data structures that control access to memory. Example 3 shows two of these, the Arc and RWLock structures.
 
@@ -174,7 +176,6 @@ fn main() {
 
 ## Try it!
 
-Here we explain the deadlock code
 #### Example 6: Deadlock
 
 ```rust
@@ -207,9 +208,10 @@ fn main() {
     println!("Lock was never released in spawned proc(), so I will never be reached!");
 }
 ```
+1. Explain why this code deadlocks.
+2. Use different features of Rust to write your own program that deadlocks.
 
-Use features of Rust to write your own program that deadlocks.
-
-## References:
+## References
 Arpaci-Dusseau, Andrea and Remzi. Operating Systems: Three Easy Pieces. http://pages.cs.wisc.edu/~remzi/OSTEP/
+
 Evans, David. University of Virginia, CS 4414: Operating Systems. Spring 2014
