@@ -45,40 +45,51 @@
 <h2>
 <a name="processes-and-threads---what-are-they" class="anchor" href="#processes-and-threads---what-are-they"><span class="octicon octicon-link"></span></a>Processes and Threads - What are they?</h2>
 
+<p>Both threads and processes are abstractions the operating system provides. Through the process abstraction, we can provide each program with the illusion that it owns the machine it is running on. This means giving each program its own address space, stack, registers and program counter, in addition to CPU time. Switching from a running process to a waiting process then requires the processor to make a context switch. This context switch involves saving the current thread's state to a process control block and restoring the state of the sleeping process. When making the context switch from one process to another we also have to switch address spaces, which is a fairly expensive process.
+A thread is a bit smaller than a process, and is often defined as the smallest possible unit of schedulable computation. Each thread retains the ability to execute a sequence of instructions by having separate program counters, registers and stack, threads share an address space. This means a context switch between threads does not require switching the address space, and can be done with lower cost.</p>
+
 <h3>
 <a name="cost-of-creation" class="anchor" href="#cost-of-creation"><span class="octicon octicon-link"></span></a>Cost of Creation</h3>
+
+<p>Since processes have their own address space, whenever a new process is created, this address space must also be created. Threads are therefore lighter to create, as they attach to existing address space instead of having to allocate new space in memory.</p>
 
 <h3>
 <a name="shared-memory" class="anchor" href="#shared-memory"><span class="octicon octicon-link"></span></a>Shared Memory</h3>
 
+<p>Since threads share address space it is relatively easy for programmers to have them communicate. Processes are more difficult, and either require the use of special interfaces like pipes and message passing or very careful manual memory management.</p>
+
 <h2>
 <a name="tasks-are-a-special-form-of-thread" class="anchor" href="#tasks-are-a-special-form-of-thread"><span class="octicon octicon-link"></span></a>Tasks are a special form of thread</h2>
+
+<p>Rust tasks are a special form of thread. While tasks share memory space, only immutable memory can be shared.
+When spawning a task you provide a closure to pass to the function. By only accepting owned closures, Rust can limit data shared between tasks to immutable data, since the parent task owns the data and allows child tasks to reference it. As soon as a child task tries to modify that owned box, that child task would have to take ownership of the box, violating the closure. Beyond closures, any type that is of the <code>Send</code> kind can be passed between tasks. <code>Send</code> types can only contain owned types, and thus do not violate ownership rules, but do not need to be explicitly stated as closures.</p>
 
 <h3>
 <a name="native-thread-vs-green-thread" class="anchor" href="#native-thread-vs-green-thread"><span class="octicon octicon-link"></span></a>Native Thread vs. Green Thread</h3>
 
 <p>The default native thread uses one-to-one scheduling to map tasks to operating system (OS) kernel provided threads. Stated simply, for every task created by the user, there is a separate OS thread in which the task is run. </p>
 
-<h3>
-<a name="shared-memory-space" class="anchor" href="#shared-memory-space"><span class="octicon octicon-link"></span></a>Shared Memory Space</h3>
-
-<h2>
-<a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h2>
-
-<h3>
-<a name="example-1-thread-creation" class="anchor" href="#example-1-thread-creation"><span class="octicon octicon-link"></span></a>Example 1: Thread Creation</h3>
+<h4>
+<a name="example-1-thread-creation" class="anchor" href="#example-1-thread-creation"><span class="octicon octicon-link"></span></a>Example 1: Thread Creation</h4>
 
 <div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">task</span><span class="p">;</span>
 
 <span class="k">fn</span> <span class="n">printStr</span><span class="p">(</span><span class="n">s</span><span class="o">:</span> <span class="o">&amp;</span><span class="k">str</span><span class="p">)</span> <span class="p">{</span>
     <span class="n">println</span><span class="o">!</span><span class="p">(</span> <span class="s">"{:s}"</span><span class="p">,</span> <span class="n">s</span> <span class="p">);</span>
-<span class="p">}</span>   
+<span class="p">}</span>       
 
 <span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
     <span class="n">task</span><span class="o">::</span><span class="n">spawn</span><span class="p">(</span> <span class="n">proc</span><span class="p">(){</span> <span class="n">printStr</span><span class="p">(</span><span class="s">"A"</span><span class="p">);</span> <span class="p">});</span>
     <span class="n">task</span><span class="o">::</span><span class="n">spawn</span><span class="p">(</span> <span class="n">proc</span><span class="p">(){</span> <span class="n">printStr</span><span class="p">(</span><span class="s">"B"</span><span class="p">);</span> <span class="p">});</span>
 <span class="p">}</span>
 </pre></div>
+
+<p>In Example 1, a simple task is created. Since we did not specify which task library to use, these tasks will be created using the native thread model, with each task having its corresponding kernel thread. In this simple example there is no need for shared data.</p>
+
+<h3>
+<a name="shared-memory-space" class="anchor" href="#shared-memory-space"><span class="octicon octicon-link"></span></a>Shared Memory Space</h3>
+
+<p>As stated before, the shared memory space of Rust tasks is immutable. However, Rust does allow programmers to disregard the built-in safety mechanisms and access memory unsafely as show in Example 2.</p>
 
 <h4>
 <a name="example-2-failed-data-sharing" class="anchor" href="#example-2-failed-data-sharing"><span class="octicon octicon-link"></span></a>Example 2: Failed Data Sharing</h4>
@@ -87,44 +98,37 @@
 
 <span class="k">static</span> <span class="k">mut</span> <span class="n">count</span><span class="o">:</span> <span class="k">int</span> <span class="o">=</span> <span class="m">0</span><span class="p">;</span>
 
-
-<span class="k">fn</span> <span class="n">increment</span><span class="p">(</span> <span class="n">count</span><span class="o">:</span> <span class="k">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">int</span><span class="p">{</span>
-    <span class="k">return</span> <span class="n">count</span> <span class="o">+</span> <span class="m">1</span><span class="p">;</span>    
-<span class="p">}</span>
-
 <span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
 
-    <span class="k">for</span> <span class="n">i</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10000</span><span class="p">)</span> <span class="p">{</span>
-        <span class="n">task</span><span class="o">::</span><span class="n">spawn</span><span class="p">(</span> <span class="n">proc</span><span class="p">(){</span> 
-            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"before {:s}"</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">to_str</span><span class="p">());</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10000</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">task</span><span class="o">::</span><span class="n">spawn</span><span class="p">(</span> <span class="n">proc</span><span class="p">(){</span>
             <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">100</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">unsafe</span> <span class="p">{</span>
-                    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"before - count is: {}"</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
-                    <span class="n">count</span> <span class="o">=</span> <span class="n">increment</span><span class="p">(</span><span class="n">count</span><span class="p">);</span>
-                    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"after - count is: {}"</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+                    <span class="n">count</span> <span class="o">+=</span> <span class="m">1</span><span class="p">;</span>
                 <span class="p">}</span>
             <span class="p">}</span>
-        <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"after {:s}"</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">to_str</span><span class="p">());</span>
         <span class="p">});</span>
     <span class="p">}</span>
 
-    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Result should be 1000000"</span><span class="p">);</span>
+    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Result should be 1,000,000"</span><span class="p">);</span>
     <span class="k">unsafe</span> <span class="p">{</span>
         <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"main: done with both count = {}"</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
-    <span class="p">}</span>
+    <span class="p">}</span>  
+
 <span class="p">}</span>
+
 </pre></div>
 
-<h3>
-<a name="example-3-safe-data-sharing" class="anchor" href="#example-3-safe-data-sharing"><span class="octicon octicon-link"></span></a>Example 3: Safe Data Sharing</h3>
+<p>Here, 10,000 threads are created and each increments a global mutable variable 100 times. Even though the simple increment operation <code>count += 1;</code> seems like it should be atomic, we do not control the scheduling of each task, and any task can access count and perform this increment at anytime. This leads to incorrect results. Beyond incorrect results, the results are often different, making this a very difficult bug to identify and fix in a more complex program.</p>
+
+<p>The solution to our problem is to safely share this data. Rust provides several higher-level data structures that control access to memory. Example 3 shows two of these, the Arc and RWLock structures.</p>
+
+<h4>
+<a name="example-3-safe-data-sharing" class="anchor" href="#example-3-safe-data-sharing"><span class="octicon octicon-link"></span></a>Example 3: Safe Data Sharing</h4>
 
 <div class="highlight highlight-rust"><pre><span class="k">extern</span> <span class="n">crate</span> <span class="n">sync</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="n">sync</span><span class="o">::</span><span class="p">{</span><span class="n">RWLock</span><span class="p">,</span> <span class="n">Arc</span><span class="p">};</span>
-
-<span class="k">fn</span> <span class="n">increment</span><span class="p">(</span> <span class="n">count</span><span class="o">:</span> <span class="k">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">int</span><span class="p">{</span>
-    <span class="k">return</span> <span class="n">count</span> <span class="o">+</span> <span class="m">1</span><span class="p">;</span>    
-<span class="p">}</span>
 
 <span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>    
 
@@ -140,7 +144,7 @@
 
             <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"before -  count = {}"</span><span class="p">,</span> <span class="o">*</span><span class="n">count</span><span class="p">);</span>
             <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span> <span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">100</span><span class="p">)</span> <span class="p">{</span>
-                <span class="o">*</span><span class="n">count</span> <span class="o">=</span> <span class="n">increment</span><span class="p">(</span><span class="o">*</span><span class="n">count</span><span class="p">);</span>
+                <span class="o">*</span><span class="n">count</span> <span class="o">+=</span> <span class="m">1</span><span class="p">;</span>
             <span class="p">}</span>
 
             <span class="k">let</span> <span class="n">count</span> <span class="o">=</span> <span class="n">count</span><span class="p">.</span><span class="n">downgrade</span><span class="p">();</span>
@@ -154,36 +158,32 @@
 <span class="p">}</span>
 </pre></div>
 
-<h3>
-<a name="example-4-ports-and-channels" class="anchor" href="#example-4-ports-and-channels"><span class="octicon octicon-link"></span></a>Example 4: Ports and Channels</h3>
+<p>In this example, an Arc is used to share data between tasks. An acronym for Atomically Reference Counted data, the Arc creates a pointer to share data between tasks. Since it is owned by the start task, and each task gets a unique cloned version, it is immutable and can be safely passed into owned closures. The Arc only provides a pointer to share a memory location between tasks, and doesn't guarantee any form of safe or controlled access though. To control access to the data here, we must use a RWLock or similar type. The RWLock allows multiple tasks to read data, an immutable action, from that portion of memory. When a task needs to mutate the RWLock data, it must request write privileges. When these are granted, all other tasks trying to access the data will block until the writing task is finished and has relinquished control.</p>
+
+<p>Of course, sometimes we want to look at the underlying structures used for this. Example 4 shows how we can safely share data between tasks using senders and receivers.</p>
+
+<h4>
+<a name="example-4-senders-reciervers-and-a-channel" class="anchor" href="#example-4-senders-reciervers-and-a-channel"><span class="octicon octicon-link"></span></a>Example 4: Senders, Reciervers and a Channel</h4>
 
 <div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">task</span><span class="p">;</span>
 <span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">comm</span><span class="o">::</span><span class="n">channel</span><span class="p">;</span>
 
-<span class="k">fn</span> <span class="n">increment</span><span class="p">(</span> <span class="n">count</span><span class="o">:</span> <span class="k">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="k">int</span><span class="p">{</span>
-    <span class="k">return</span> <span class="n">count</span> <span class="o">+</span> <span class="m">1</span><span class="p">;</span>    
-<span class="p">}</span>
-
 <span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">let</span> <span class="k">mut</span> <span class="n">count</span><span class="o">:</span> <span class="k">int</span> <span class="o">=</span> <span class="m">0</span><span class="p">;</span>
-    <span class="k">let</span> <span class="p">(</span><span class="n">tx</span><span class="p">,</span> <span class="n">rx</span><span class="p">)</span>  <span class="o">=</span> <span class="n">channel</span><span class="p">();</span>
 
     <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10000</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">let</span> <span class="n">child_tx</span> <span class="o">=</span> <span class="n">tx</span><span class="p">.</span><span class="n">clone</span><span class="p">();</span>
-        <span class="k">let</span> <span class="p">(</span><span class="n">chano</span><span class="p">,</span> <span class="n">porto</span><span class="p">)</span> <span class="o">=</span> <span class="n">channel</span><span class="p">();</span>
-        <span class="n">child_tx</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="m">2</span><span class="p">);</span>
+        <span class="k">let</span> <span class="p">(</span><span class="n">tx</span><span class="p">,</span> <span class="n">rx</span><span class="p">)</span> <span class="o">=</span> <span class="n">channel</span><span class="p">();</span>
         <span class="k">let</span> <span class="n">count2</span> <span class="o">=</span> <span class="n">count</span><span class="p">;</span>
 
         <span class="n">task</span><span class="o">::</span><span class="n">spawn</span><span class="p">(</span> <span class="n">proc</span><span class="p">(){</span> 
             <span class="k">let</span> <span class="k">mut</span> <span class="n">mut_count</span> <span class="o">=</span> <span class="n">count2</span><span class="p">;</span>
-            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"mutable count before: {}"</span><span class="p">,</span> <span class="n">mut_count</span><span class="p">);</span>
-            <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span> <span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">100</span><span class="p">)</span> <span class="p">{</span>
-                <span class="n">mut_count</span> <span class="o">=</span> <span class="n">increment</span><span class="p">(</span><span class="n">mut_count</span><span class="p">);</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span> <span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">100</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">mut_count</span> <span class="o">+=</span> <span class="m">1</span><span class="p">;</span>
             <span class="p">}</span>
-            <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"mutable count after: {}"</span><span class="p">,</span> <span class="n">mut_count</span><span class="p">);</span>
-            <span class="n">chano</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">mut_count</span><span class="p">);</span>
+            <span class="n">tx</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">mut_count</span><span class="p">);</span>
         <span class="p">});</span>
-        <span class="n">count</span> <span class="o">=</span> <span class="n">porto</span><span class="p">.</span><span class="n">recv</span><span class="p">();</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">rx</span><span class="p">.</span><span class="n">recv</span><span class="p">();</span>
     <span class="p">}</span>
 
     <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"Result should be 1000000"</span><span class="p">);</span>
@@ -191,8 +191,10 @@
 <span class="p">}</span>
 </pre></div>
 
-<h3>
-<a name="example-5-thread-waiting" class="anchor" href="#example-5-thread-waiting"><span class="octicon octicon-link"></span></a>Example 5: Thread Waiting</h3>
+<p>Similar to the previous example, we need a way to pass data from the parent task to the child tasks and then in between each child task. The most basic way Rust does this is through the creation of a <code>channel()</code>, with a <code>Sender</code> type on one end and a <code>Receiver</code> type on the other end. In this example we pass data from the parent task to child tasks through an immutable variable, so <code>Senders</code> and <code>Receivers</code> are only needed to communicate from the child threads back to the parent thread. Within the <code>for</code> loop to spawn a new thread we declare a Sender, <code>tx</code> and a Receiver <code>rx</code>, that allow the soon to be spawned child task to send data back to its parent.</p>
+
+<h4>
+<a name="example-5-thread-waiting" class="anchor" href="#example-5-thread-waiting"><span class="octicon octicon-link"></span></a>Example 5: Thread Waiting</h4>
 
 <div class="highlight highlight-rust"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">task</span><span class="p">;</span>
 
@@ -229,8 +231,8 @@
 
 <p>Here we explain the deadlock code</p>
 
-<h3>
-<a name="example-6-deadlock" class="anchor" href="#example-6-deadlock"><span class="octicon octicon-link"></span></a>Example 6: Deadlock</h3>
+<h4>
+<a name="example-6-deadlock" class="anchor" href="#example-6-deadlock"><span class="octicon octicon-link"></span></a>Example 6: Deadlock</h4>
 
 <div class="highlight highlight-rust"><pre><span class="k">extern</span> <span class="n">crate</span> <span class="n">sync</span><span class="p">;</span>
 
@@ -263,6 +265,12 @@
 </pre></div>
 
 <p>Use features of Rust to write your own program that deadlocks.</p>
+
+<h2>
+<a name="references" class="anchor" href="#references"><span class="octicon octicon-link"></span></a>References:</h2>
+
+<p>Arpaci-Dusseau, Andrea and Remzi. Operating Systems: Three Easy Pieces. <a href="http://pages.cs.wisc.edu/%7Eremzi/OSTEP/">http://pages.cs.wisc.edu/~remzi/OSTEP/</a>
+Evans, David. University of Virginia, CS 4414: Operating Systems. Spring 2014</p>
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/skclifton">skclifton</a></p>
