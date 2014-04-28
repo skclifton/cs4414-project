@@ -107,43 +107,37 @@ fn main() {
 
 In this example, an Arc is used to share data between tasks. An acronym for Atomically Reference Counted data, the Arc creates a pointer to share data between tasks. Since it is owned by the start task, and each task gets a unique cloned version, it is immutable and can be safely passed into owned closures. The Arc only provides a pointer to share a memory location between tasks, and doesn't guarantee any form of safe or controlled access though. To control access to the data here, we must use a RWLock or similar type. The RWLock allows multiple tasks to read data, an immutable action, from that portion of memory. When a task needs to mutate the RWLock data, it must request write privileges. When these are granted, all other tasks trying to access the data will block until the writing task is finished and has relinquished control.
 
-#### Example 4: Ports and Channels
+Of course, sometimes we want to look at the underlying structures used for this. Example 4 shows how we can safely share data between tasks using senders and receivers.
+
+#### Example 4: Senders, Reciervers and a Channel
 
 ```rust
 use std::task;
 use std::comm::channel;
 
-fn increment( count: int) -> int{
-    return count + 1;    
-}
-
 fn main() {
     let mut count: int = 0;
-    let (tx, rx)  = channel();
     
     for _ in range(0, 10000) {
-        let child_tx = tx.clone();
-        let (chano, porto) = channel();
-        child_tx.send(2);
+        let (tx, rx) = channel();
         let count2 = count;
         
         task::spawn( proc(){ 
             let mut mut_count = count2;
-            println!("mutable count before: {}", mut_count);
-            for _ in range (0,100) {
-                mut_count = increment(mut_count);
+            
+	    for _ in range (0,100) {
+                mut_count += 1;
             }
-            println!("mutable count after: {}", mut_count);
-            chano.send(mut_count);
+            tx.send(mut_count);
         });
-        count = porto.recv();
+        count = rx.recv();
     }
     
     println!("Result should be 1000000");
     println!("main: done with both count = {}", count);
 }
 ```
-
+Similar to the previous example, we need a way to pass data from the parent task to the child tasks and then in between each child task. The most basic way Rust does this is through the creation of a ```channel()```, with a ```Sender``` type on one end and a ```Receiver``` type on the other end. In this example we pass data from the parent task to child tasks through an immutable variable, so ```Senders``` and ```Receivers``` are only needed to communicate from the child threads back to the parent thread. Within the ```for``` loop to spawn a new thread we declare a Sender, ```tx``` and a Receiver ```rx```, that allow the soon to be spawned child task to send data back to its parent.
 
 #### Example 5: Thread Waiting
 
