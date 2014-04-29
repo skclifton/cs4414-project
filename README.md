@@ -185,3 +185,10 @@ fn main() {
 Arpaci-Dusseau, Andrea and Remzi. Operating Systems: Three Easy Pieces. http://pages.cs.wisc.edu/~remzi/OSTEP/
 
 Evans, David. University of Virginia, CS 4414: Operating Systems. Spring 2014
+
+### Rust Docs
+http://static.rust-lang.org/doc/master/guide-tasks.html
+http://static.rust-lang.org/doc/master/green/index.html
+http://static.rust-lang.org/doc/master/native/index.html
+http://static.rust-lang.org/doc/master/std/task/index.html
+
