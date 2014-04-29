@@ -66,9 +66,12 @@
 When spawning a task you provide a closure to pass to the function. By only accepting owned closures, Rust can limit data shared between tasks to immutable data, since the parent task owns the data and allows child tasks to reference it. As soon as a child task tries to modify that owned box, that child task would have to take ownership of the box, violating the closure. Beyond closures, any type that is of the <code>Send</code> kind can be passed between tasks. <code>Send</code> types can only contain owned types, and thus do not violate ownership rules, but do not need to be explicitly stated as closures.</p>
 
 <h3>
-<a name="native-thread-vs-green-thread" class="anchor" href="#native-thread-vs-green-thread"><span class="octicon octicon-link"></span></a>Native Thread vs. Green Thread</h3>
+<a name="task-implementation" class="anchor" href="#task-implementation"><span class="octicon octicon-link"></span></a>Task Implementation</h3>
 
-<p>The default native thread uses one-to-one scheduling to map tasks to operating system (OS) kernel provided threads. Stated simply, for every task created by the user, there is a separate OS thread in which the task is run. </p>
+<p>Rust implements tasks in two ways, based on which crate you use.
+The default native scheduling crate allows you to create tasks that use one-to-one scheduling. This means each task is mapped to a single operating system (OS) kernel provided threads. Stated simply, for every task created by the user, there is a separate OS thread in which the task is run. 
+The green scheduling crate provides the ability to create green threads. Green threads are user space threads that map to kernel threads in an M:N manner. Green threads take a bit more effort to set up in Rust and while they can be faster to spawn, they have poorer I/O performance and slower context switches.
+This chapter focuses on the first.</p>
 
 <h4>
 <a name="example-1-task-creation" class="anchor" href="#example-1-task-creation"><span class="octicon octicon-link"></span></a>Example 1: Task Creation</h4>
@@ -239,6 +242,14 @@ When spawning a task you provide a closure to pass to the function. By only acce
 <p>Arpaci-Dusseau, Andrea and Remzi. Operating Systems: Three Easy Pieces. <a href="http://pages.cs.wisc.edu/%7Eremzi/OSTEP/">http://pages.cs.wisc.edu/~remzi/OSTEP/</a></p>
 
 <p>Evans, David. University of Virginia, CS 4414: Operating Systems. Spring 2014</p>
+
+<h3>
+<a name="rust-docs" class="anchor" href="#rust-docs"><span class="octicon octicon-link"></span></a>Rust Docs</h3>
+
+<p><a href="http://static.rust-lang.org/doc/master/guide-tasks.html">http://static.rust-lang.org/doc/master/guide-tasks.html</a>
+<a href="http://static.rust-lang.org/doc/master/green/index.html">http://static.rust-lang.org/doc/master/green/index.html</a>
+<a href="http://static.rust-lang.org/doc/master/native/index.html">http://static.rust-lang.org/doc/master/native/index.html</a>
+<a href="http://static.rust-lang.org/doc/master/std/task/index.html">http://static.rust-lang.org/doc/master/std/task/index.html</a></p>
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/skclifton">skclifton</a></p>
