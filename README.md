@@ -44,7 +44,7 @@ In Example 1, a simple task is created. Since we did not specify which task libr
 As stated before, the shared memory space of Rust tasks is immutable. However, Rust does allow programmers to disregard the built-in safety mechanisms and access memory unsafely as show in Example 2.
 
 
-#### Example 2: Failed Data Sharing
+#### Example 2: Unsafe Data Sharing
 
 ```rust
 use std::task;
@@ -52,7 +52,6 @@ use std::task;
 static mut count: int = 0;
 
 fn main() {
-    
     for _ in range(0, 10000) {
         task::spawn( proc(){
             for _ in range(0, 100) {
@@ -83,15 +82,12 @@ extern crate sync;
 use sync::{RWLock, Arc};
 
 fn main() {    
-
     let lock1 = Arc::new(RWLock::new(0));
     
     for _ in range(0, 10000) {
-    
         let lock2 = lock1.clone();
         
         spawn(proc() {
-        
             let mut count = lock2.write();
             
             println!("before -  count = {}", *count);
@@ -110,7 +106,7 @@ fn main() {
 }
 ```
 
-In this example, an Arc is used to share data between tasks. An acronym for Atomically Reference Counted data, the Arc creates a pointer to share data between tasks. Since it is owned by the start task, and each task gets a unique cloned version, it is immutable and can be safely passed into owned closures. The Arc only provides a pointer to share a memory location between tasks, and doesn't guarantee any form of safe or controlled access though. To control access to the data here, we must use a RWLock or similar type. The RWLock allows multiple tasks to conduct immutable actions, like reading data, with that portion of memory. When a task needs to mutate the RWLock data it must request write privileges. When these are granted, all other tasks trying to access the data will block until the writing task is finished and has relinquished control.
+In this example, an Arc is used to share data between tasks. An acronym for Atomically Reference Counted data, the Arc creates a pointer to share data between tasks. Since it is owned by the start task, and each task gets a unique cloned version, it is immutable and can be safely passed into owned closures. The Arc only provides a pointer to share a memory location between tasks, and doesn't guarantee any form of safe or controlled access though. To control access to the data here, we must use a RWLock or similar type. The RWLock allows multiple tasks to conduct immutable actions, like reading data, with that portion of memory. When a task needs to mutate the RWLock data it must request write privileges. When these are granted, all other tasks trying to access the data will block until the writing task is finished and has relinquished control. In this example, the line ```let lock2 = lock1.clone()``` is necessary as it allows a copy of the arc to be passed to the newly spawned task. 
 
 Of course, sometimes we want to look at the underlying structures used for this. Example 4 shows how we can safely share data between tasks using senders and receivers.
 
@@ -158,12 +154,10 @@ fn increment( count: int) -> int{
 }
 
 fn main() {    
-
     let mutex1 = Arc::new(Mutex::new(0));
     let mutex2 = mutex1.clone();
         
     spawn(proc() {
-    
         let mut val = mutex2.lock();
         *val = increment(*val);
         
