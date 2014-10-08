@@ -160,16 +160,12 @@ fn main() {
     spawn(proc() {
         let mut val = mutex2.lock();
         *val = increment(*val);
-        
-
     });
     
     let value = mutex1.lock();
     while *value != 2 {
         value.cond.wait();
     }
-    
-    println!("Lock was never released in spawned proc(), so I will never be reached!");
 }
 ```
 1. Explain why this code deadlocks.
